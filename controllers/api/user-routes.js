@@ -4,16 +4,17 @@ const { User } = require('../../models');
 // CREATE new user
 router.post('/', async (req, res) => {
   try {
-    const dbUserData = await User.create({
+    const userData = await User.create({
       username: req.body.username,
-      email: req.body.email,
       password: req.body.password,
     });
 
     req.session.save(() => {
+      req.session.user_id = userData.id;
+      req.session.savedusername = userData.username;
       req.session.loggedIn = true;
 
-      res.status(200).json(dbUserData);
+      res.status(200).json(UserData);
     });
   } catch (err) {
     console.log(err);
@@ -24,41 +25,31 @@ router.post('/', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const dbUserData = await User.findOne({
-      where: {
-        email: req.body.email,
+    const userData = await User.findOne({
+      where: {username: req.body.username,
       },
     });
 
-    if (!dbUserData) {
-      res
-        .status(400)
-        .json({ message: 'Incorrect email or password. Please try again!' });
+    if (!UserData) {
+      res.status(400).json({ message: 'Incorrect username. Please try again!' });
       return;
     }
 
-    const validPassword = await dbUserData.checkPassword(req.body.password);
+    const validPassword = await userData.checkPassword(req.body.password);
 
     if (!validPassword) {
-      res
-        .status(400)
-        .json({ message: 'Incorrect email or password. Please try again!' });
+      res.status(400).json({ message: 'Incorrect password. Please try again!' });
       return;
     }
 
     req.session.save(() => {
+      req.session.user_id - userData.id;
       req.session.loggedIn = true;
-      console.log(
-        '🚀 ~ file: user-routes.js ~ line 57 ~ req.session.save ~ req.session.cookie',
-        req.session.cookie
-      );
+      req.session.savedusername = userData.username;
 
-      res
-        .status(200)
-        .json({ user: dbUserData, message: 'You are now logged in!' });
+      res.status(200).json({ user: userData, message: 'You are now logged in!' });
     });
   } catch (err) {
-    console.log(err);
     res.status(500).json(err);
   }
 });
